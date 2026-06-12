@@ -20,6 +20,11 @@ struct JobListView: View {
             }
             .navigationTitle("Find your next role")
             .navigationBarTitleDisplayMode(.large)
+            .searchable(
+                text: $viewModel.searchText,
+                placement: .navigationBarDrawer(displayMode: .always),
+                prompt: "Job title, company, or location"
+            )
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(action: {}) {
@@ -47,12 +52,14 @@ struct JobListView: View {
                 systemImage: "briefcase",
                 description: Text("Check back soon for new remote opportunities.")
             )
-        case .loaded(let jobs):
+        case .loaded where viewModel.filteredJobs.isEmpty:
+            ContentUnavailableView.search(text: viewModel.searchText)
+        case .loaded:
             ScrollView {
                 LazyVStack(spacing: 14) {
-                    resultHeader(count: jobs.count)
+                    resultHeader(count: viewModel.filteredJobs.count)
 
-                    ForEach(jobs) { job in
+                    ForEach(viewModel.filteredJobs) { job in
                         JobRowView(job: job)
                     }
                 }
