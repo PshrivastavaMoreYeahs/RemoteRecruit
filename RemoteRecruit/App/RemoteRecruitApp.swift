@@ -8,10 +8,12 @@
 import SwiftUI
 
 @main
-struct RemoteRecruitApp: App {
+struct RemoteRecruitAppApp: App {
+    private let container = AppContainer.live
+
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            ContentView(viewModel: container.makeJobListViewModel())
         }
     }
 }
