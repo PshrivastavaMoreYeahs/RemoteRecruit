@@ -18,8 +18,22 @@ final class JobListViewModel: ObservableObject {
     }
 
     @Published private(set) var state: State = .idle
+    @Published var searchText = ""
 
     private let repository: any JobRepository
+
+    var filteredJobs: [Job] {
+        guard case .loaded(let jobs) = state else { return [] }
+
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return jobs }
+
+        return jobs.filter { job in
+            job.title.localizedStandardContains(query)
+                || job.companyName.localizedStandardContains(query)
+                || job.location.localizedStandardContains(query)
+        }
+    }
 
     init(repository: any JobRepository) {
         self.repository = repository
