@@ -9,22 +9,35 @@ import SwiftUI
 
 struct ContentView: View {
     @StateObject private var viewModel: JobListViewModel
+    private let makeJobDetailsViewModel: (Job) -> JobDetailsViewModel
 
-    init(viewModel: JobListViewModel) {
+    init(
+        viewModel: JobListViewModel,
+        makeJobDetailsViewModel: @escaping (Job) -> JobDetailsViewModel
+    ) {
         _viewModel = StateObject(wrappedValue: viewModel)
+        self.makeJobDetailsViewModel = makeJobDetailsViewModel
     }
 
     var body: some View {
-        JobListView(viewModel: viewModel)
+        JobListView(
+            viewModel: viewModel,
+            makeJobDetailsViewModel: makeJobDetailsViewModel
+        )
     }
 }
 
 private struct ContentViewPreview: PreviewProvider {
     static var previews: some View {
+        let repository = PreviewJobRepository()
+
         ContentView(
             viewModel: JobListViewModel(
-                repository: PreviewJobRepository()
-            )
+                repository: repository
+            ),
+            makeJobDetailsViewModel: {
+                JobDetailsViewModel(job: $0, repository: repository)
+            }
         )
     }
 }

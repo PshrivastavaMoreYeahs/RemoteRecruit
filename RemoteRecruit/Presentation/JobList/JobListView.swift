@@ -9,6 +9,7 @@ import SwiftUI
 
 struct JobListView: View {
     @ObservedObject var viewModel: JobListViewModel
+    let makeJobDetailsViewModel: (Job) -> JobDetailsViewModel
 
     var body: some View {
         NavigationStack {
@@ -60,7 +61,14 @@ struct JobListView: View {
                     resultHeader(count: viewModel.filteredJobs.count)
 
                     ForEach(viewModel.filteredJobs) { job in
-                        JobRowView(job: job)
+                        NavigationLink {
+                            JobDetailsView(
+                                viewModel: makeJobDetailsViewModel(job)
+                            )
+                        } label: {
+                            JobRowView(job: job)
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
                 .padding(.horizontal, 16)
@@ -101,10 +109,15 @@ struct JobListView: View {
 
 private struct JobListViewPreview: PreviewProvider {
     static var previews: some View {
+        let repository = PreviewJobRepository()
+
         JobListView(
             viewModel: JobListViewModel(
-                repository: PreviewJobRepository()
-            )
+                repository: repository
+            ),
+            makeJobDetailsViewModel: {
+                JobDetailsViewModel(job: $0, repository: repository)
+            }
         )
     }
 }
