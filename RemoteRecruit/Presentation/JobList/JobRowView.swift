@@ -28,13 +28,9 @@ struct JobRowView: View {
 
                 Spacer(minLength: 4)
 
-                Button(action: {}) {
-                    Image(systemName: "bookmark")
-                        .font(.body.weight(.semibold))
-                }
-                .buttonStyle(.plain)
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.bold))
                 .foregroundStyle(.secondary)
-                .accessibilityLabel("Save \(job.title)")
             }
 
             Divider()

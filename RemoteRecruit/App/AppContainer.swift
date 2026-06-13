@@ -18,6 +18,11 @@ struct AppContainer {
     func makeJobListViewModel() -> JobListViewModel {
         JobListViewModel(repository: jobRepository)
     }
+
+    @MainActor
+    func makeJobDetailsViewModel(for job: Job) -> JobDetailsViewModel {
+        JobDetailsViewModel(job: job, repository: jobRepository)
+    }
 }
 
 extension AppContainer {

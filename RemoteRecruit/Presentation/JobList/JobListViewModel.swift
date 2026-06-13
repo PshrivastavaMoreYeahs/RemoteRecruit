@@ -20,7 +20,7 @@ final class JobListViewModel: ObservableObject {
     @Published private(set) var state: State = .idle
     @Published var searchText = ""
 
-    private let repository: any JobRepository
+    private let repository: any JobListRepository
 
     var filteredJobs: [Job] {
         guard case .loaded(let jobs) = state else { return [] }
@@ -35,7 +35,7 @@ final class JobListViewModel: ObservableObject {
         }
     }
 
-    init(repository: any JobRepository) {
+    init(repository: any JobListRepository) {
         self.repository = repository
     }
 
