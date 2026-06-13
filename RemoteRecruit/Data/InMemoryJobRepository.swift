@@ -21,7 +21,7 @@ struct InMemoryJobRepository: JobRepository {
     }
 }
 
-struct PreviewJobRepository: JobRepository {
+struct PreviewJobRepositoryByFile: JobRepository {
     func fetchJobs() async throws -> [Job] {
         Array(SampleJobs.details.prefix(2).map(\.job))
     }

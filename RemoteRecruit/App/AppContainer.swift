@@ -27,6 +27,6 @@ struct AppContainer {
 
 extension AppContainer {
     static let live = AppContainer(
-        jobRepository: InMemoryJobRepository()
+        jobRepository: JSONJobRepository()
     )
 }

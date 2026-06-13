@@ -23,6 +23,8 @@ final class RemoteRecruitAppTests: XCTestCase {
             repository: JobRepositoryStub(result: .success(expectedJobs))
         )
 
+        XCTAssertEqual(viewModel.filteredJobs, [])
+
         await viewModel.loadJobs()
 
         XCTAssertEqual(viewModel.state, .loaded(expectedJobs))
@@ -71,14 +73,6 @@ final class RemoteRecruitAppTests: XCTestCase {
         await viewModel.retry()
 
         XCTAssertEqual(repository.fetchCount, 2)
-    }
-
-    func testFilteredJobsIsEmptyBeforeJobsLoad() {
-        let viewModel = JobListViewModel(
-            repository: JobRepositoryStub(result: .success([]))
-        )
-
-        XCTAssertEqual(viewModel.filteredJobs, [])
     }
 
     func testSearchFiltersJobsByTitleCompanyAndLocation() async {
@@ -223,34 +217,63 @@ final class RemoteRecruitAppTests: XCTestCase {
         XCTAssertEqual(repository.fetchCount, 2)
     }
 
-    func testInMemoryRepositoryReturnsJobsAndMatchingDetails() async throws {
-        let repository = InMemoryJobRepository()
+    func testJSONRepositoryDecodesJobsAndMatchingDetails() async throws {
+        let repository = JSONJobRepository(
+            loader: DataJobJSONLoader(data: makeJobsJSON())
+        )
 
         let jobs = try await repository.fetchJobs()
         let details = try await repository.fetchJobDetails(id: jobs[0].id)
 
-        XCTAssertEqual(jobs.count, 6)
+        XCTAssertEqual(jobs.count, 1)
+        XCTAssertEqual(jobs[0].title, "iOS Engineer")
+        XCTAssertEqual(jobs[0].companyName, "Acme")
+        XCTAssertEqual(jobs[0].location, "Remote")
+        XCTAssertEqual(jobs[0].salaryRange, "$100k – $130k")
+        XCTAssertTrue(jobs[0].isFeatured)
         XCTAssertEqual(details?.job, jobs[0])
-        XCTAssertFalse(details?.description.isEmpty ?? true)
-        XCTAssertFalse(details?.companyInformation.isEmpty ?? true)
+        XCTAssertEqual(details?.description, "Build excellent iOS experiences.")
+        XCTAssertEqual(
+            details?.companyInformation,
+            "Acme is a remote software company."
+        )
     }
 
-    func testInMemoryRepositoryReturnsNilForUnknownJob() async throws {
-        let repository = InMemoryJobRepository()
+    func testJSONRepositoryReturnsNilForUnknownJob() async throws {
+        let repository = JSONJobRepository(
+            loader: DataJobJSONLoader(data: makeJobsJSON())
+        )
 
         let details = try await repository.fetchJobDetails(id: UUID())
 
         XCTAssertNil(details)
     }
 
-    func testPreviewRepositoryReturnsTwoJobsAndMatchingDetails() async throws {
-        let repository = PreviewJobRepository()
+    func testJSONRepositoryThrowsForMalformedJSON() async {
+        let repository = JSONJobRepository(
+            loader: DataJobJSONLoader(data: Data("not-json".utf8))
+        )
 
-        let jobs = try await repository.fetchJobs()
-        let details = try await repository.fetchJobDetails(id: jobs[0].id)
+        do {
+            _ = try await repository.fetchJobs()
+            XCTFail("Expected malformed JSON to throw")
+        } catch {
+            XCTAssertTrue(error is DecodingError)
+        }
+    }
 
-        XCTAssertEqual(jobs.count, 2)
-        XCTAssertEqual(details?.job, jobs[0])
+    func testBundleLoaderThrowsWhenResourceIsMissing() {
+        let loader = BundleJobJSONLoader(
+            bundle: .main,
+            resourceName: "missing-jobs-fixture"
+        )
+
+        XCTAssertThrowsError(try loader.load()) { error in
+            XCTAssertEqual(
+                error as? JobJSONLoaderError,
+                .resourceNotFound("missing-jobs-fixture")
+            )
+        }
     }
 
     private func makeJob() -> Job {
@@ -267,6 +290,25 @@ final class RemoteRecruitAppTests: XCTestCase {
             job: job,
             description: "Build excellent iOS experiences.",
             companyInformation: "Acme is a remote software company."
+        )
+    }
+
+    private func makeJobsJSON() -> Data {
+        Data(
+            """
+            [
+              {
+                "id": "D60FEC10-E255-43FB-93CF-681C6286F25A",
+                "title": "iOS Engineer",
+                "companyName": "Acme",
+                "location": "Remote",
+                "salaryRange": "$100k – $130k",
+                "isFeatured": true,
+                "description": "Build excellent iOS experiences.",
+                "companyInformation": "Acme is a remote software company."
+              }
+            ]
+            """.utf8
         )
     }
 }
@@ -323,3 +365,4 @@ private final class JobDetailsRepositorySpy: JobDetailsRepository, @unchecked Se
         return try result.get()
     }
 }
+
